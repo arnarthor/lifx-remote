@@ -1,0 +1,17 @@
+{
+  "name": "lifx-remote",
+  "version": "1.0.0",
+  "description": "Menubar application for Lifx bulbs",
+  "main": "index.js",
+  "scripts": {
+    "build": "bsb -clean-world -make-world",
+    "clean": "bsb -clean-world",
+    "watch": "bsb -clean-world -make-world -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "bs-platform": "^4.0.5"
+  }
+}
