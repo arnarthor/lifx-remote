@@ -9,6 +9,6 @@ type platforms = [
   | [@bs.as "win32"] `Windows
 ];
 
-[@bs.val] [@bs.scope "os"] external platform: unit => string = "";
+[@bs.module "os"] external platform: unit => string = "";
 
 let platform = () => platform()->platformsFromJs;

@@ -1,6 +1,9 @@
 {
   "name": "lifx-remote",
   "version": "0.1.0",
+  "reason": {
+    "react-jsx": 2
+  },
   "sources": {
     "dir": "src",
     "subdirs": true
@@ -10,7 +13,7 @@
     "in-source": true
   },
   "suffix": ".bs.js",
-  "bs-dependencies": ["bs-electron"],
+  "bs-dependencies": ["bs-electron", "reason-react"],
   "warnings": {
     "error": "+101"
   },

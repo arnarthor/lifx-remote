@@ -2,16 +2,27 @@
   "name": "lifx-remote",
   "version": "1.0.0",
   "description": "Menubar application for Lifx bulbs",
-  "main": "index.js",
   "scripts": {
     "build": "bsb -clean-world -make-world",
-    "clean": "bsb -clean-world",
     "watch": "bsb -clean-world -make-world -w",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "bsb -clean-world",
+    "start": "parcel src/web/index.html",
+    "start:electron": "nodemon --exec 'electron src/main/MainWindow.bs.js' --watch src/main",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "yarn link bs-electron"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "arnarthor (arnar.th92@gmail.com)",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^2.0.8",
+    "parcel-bundler": "^1.9.7",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "reason-react": ">=0.4.0"
+  },
   "devDependencies": {
-    "bs-platform": "^4.0.5"
+    "bs-platform": "^4.0.5",
+    "bsb-js": "^1.1.7",
+    "nodemon": "^1.18.4"
   }
 }
