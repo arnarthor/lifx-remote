@@ -1,24 +1,20 @@
 open BsElectron;
 
-let win = ref(Js.null);
+let mainWindow = ref(Js.null);
+let tray = ref(Js.null);
 
 let createWindow = () => {
-  win :=
+  mainWindow :=
     Js.Null.return(
-      BrowserWindow.make({
-        width: 1600,
-        height: 1000,
-        frame:
-          switch (Os.platform()) {
-          | Some(`MacOS) => false
-          | _ => true
-          },
-        titleBarStyle:
-          switch (Os.platform()) {
-          | Some(`MacOS) => "hidden"
-          | _ => "default"
-          },
-      }),
+      BrowserWindow.makeWindowConfig(
+        ~width=800,
+        ~height=525,
+        ~frame=false,
+        ~fullscreenable=false,
+        ~resizeable=false,
+        (),
+      )
+      ->BrowserWindow.make,
     );
 
   let bundleLocation =
@@ -26,21 +22,61 @@ let createWindow = () => {
       Belt.Option.getExn([%bs.node __dirname]),
       "./build/index.html",
     |]);
+
   BrowserWindow.loadURL(
-    Js.Null.getExn(win^),
+    Js.Null.getExn(mainWindow^),
     /* TODO: Setup env checks */
     true ? "http://localhost:1234" : {j|file://$bundleLocation|j},
   );
-  if (true) {
-    BrowserWindow.openDevTools(Js.Null.getExn(win^));
-  };
-  BrowserWindow.on(Js.Null.getExn(win^), `Closed, () => win := Js.null);
+
+  BrowserWindow.on(Js.Null.getExn(mainWindow^), `Blur, _ =>
+    BrowserWindow.hide(Js.Null.getExn(mainWindow^))
+  );
 };
 
-App.on(
-  `Ready,
-  () => {
+let showWindow = trayBounds => {
+  let {x, y}: ElectronPositioner.coordinates =
+    Js.Null.getExn(mainWindow^)
+    ->ElectronPositioner.make
+    ->ElectronPositioner.calculate(`TrayCenter(trayBounds));
+
+  BrowserWindow.setPosition(
+    Js.Null.getExn(mainWindow^),
+    ~x,
+    ~y,
+    ~animate=false,
+  );
+  BrowserWindow.show(Js.Null.getExn(mainWindow^));
+};
+
+let toggleWindow = trayBounds => {
+  if (mainWindow^ == Js.null) {
     createWindow();
-    ();
-  },
-);
+  };
+  switch (BrowserWindow.getVisibility(Js.Null.getExn(mainWindow^))) {
+  | `Showing => BrowserWindow.hide(Js.Null.getExn(mainWindow^))
+  | `Hidden => showWindow(trayBounds)
+  };
+};
+
+let createTray = () => {
+  tray :=
+    Js.Null.return(
+      Tray.make(
+        Node.Path.join2(
+          Belt.Option.getExn([%bs.node __dirname]),
+          switch (Os.platform()) {
+          | Some(`MacOS) => "../public/icon.png"
+          | _ => "../public/favicon.ico"
+          },
+        ),
+      ),
+    );
+
+  Tray.on(Js.Null.getExn(tray^), `Click, (_event, trayBounds) =>
+    toggleWindow(trayBounds)
+  );
+};
+
+App.on(`Ready, () => createTray());
+App.Dock.hide();
