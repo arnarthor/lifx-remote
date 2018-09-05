@@ -1,5 +1,9 @@
 open BsElectron;
 
+module BrowserWindow = BrowserWindow.MakeBrowserWindow(Messages);
+
+module IpcMain = IpcMain.MakeIpcMain(Messages);
+
 let mainWindow = ref(Js.null);
 let tray = ref(Js.null);
 
@@ -28,6 +32,8 @@ let createWindow = () => {
     /* TODO: Setup env checks */
     true ? "http://localhost:1234" : {j|file://$bundleLocation|j},
   );
+
+  /* BrowserWindow.openDevTools(Js.Null.getExn(mainWindow^)); */
 
   BrowserWindow.on(Js.Null.getExn(mainWindow^), `Blur, _ =>
     BrowserWindow.hide(Js.Null.getExn(mainWindow^))
@@ -78,5 +84,17 @@ let createTray = () => {
   );
 };
 
-App.on(`Ready, () => createTray());
+App.on(
+  `Ready,
+  () => {
+    IpcMain.on((. _event, message) =>
+      switch (message) {
+      | `TurnOnAllLights => Js.log("Turn on all lights")
+      | `TurnOffAllLights => Js.log("Turn off all lights")
+      | `SetLightStatuses(lightStatuses) => Js.log("All lights")
+      }
+    );
+    createTray();
+  },
+);
 App.Dock.hide();

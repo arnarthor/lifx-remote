@@ -9,7 +9,7 @@
     "start": "parcel src/web/index.html",
     "start:electron": "nodemon --exec 'electron src/main/MainWindow.bs.js' --watch src/main",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "yarn link bs-electron bs-electron-positioner"
+    "postinstall": "yarn link bs-electron bs-electron-positioner bs-node-lifx-lan"
   },
   "author": "arnarthor (arnar.th92@gmail.com)",
   "license": "MIT",

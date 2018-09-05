@@ -13,7 +13,12 @@
     "in-source": true
   },
   "suffix": ".bs.js",
-  "bs-dependencies": ["bs-electron", "bs-electron-positioner", "reason-react"],
+  "bs-dependencies": [
+    "bs-electron",
+    "bs-electron-positioner",
+    "bs-node-lifx-lan",
+    "reason-react"
+  ],
   "warnings": {
     "error": "+101"
   },
