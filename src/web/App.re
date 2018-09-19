@@ -1,6 +1,8 @@
 open Css;
 
-let component = ReasonReact.statelessComponent("App");
+open! Styles;
+
+let component = ReasonReact.statelessComponent(__MODULE__);
 
 module IpcRenderer = BsElectron.IpcRenderer.MakeIpcRenderer(Messages);
 
@@ -10,7 +12,7 @@ IpcRenderer.on((. _event, message) =>
   }
 );
 
-let root = style([minHeight(`vh(100.)), backgroundColor(hex("000000"))]);
+let root = style([minHeight(`px(525)), backgroundColor(black)]);
 
 let make = _children => {
   ...component,
