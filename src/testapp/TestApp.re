@@ -3,7 +3,6 @@ open Css;
 open! Styles;
 
 type color = [ | `Yellow | `Red | `White | `Blue];
-
 type light = {
   id: int,
   name: string,
@@ -54,18 +53,12 @@ let lights = [
 type state = list(light);
 
 type action =
-  | ToggleLight(int, bool, color)
+  | ToggleLight(int, bool)
   | ChangeColor(int, color);
 
 let component = ReasonReact.reducerComponent(__MODULE__);
 
-module IpcRenderer = BsElectron.IpcRenderer.MakeIpcRenderer(Messages);
-
-IpcRenderer.on((. _event, message) =>
-  switch (message) {
-  | `LightStatus(statuses) => Js.log(statuses)
-  }
-);
+module IpcRenderer = BsElectron.IpcRenderer.MakeIpcRenderer(TestAppMessages);
 
 let root =
   style([
@@ -108,25 +101,33 @@ let make = _children => {
   initialState: () => lights,
   reducer: (action, state) =>
     switch (action) {
-    | ToggleLight(id, turnedOn, color) =>
+    | ToggleLight(id, turnedOn) =>
       let (beforeLight, rest) =
         Belt.List.splitAt(state, id)->Belt.Option.getExn;
       let [lightAtId, ...rest] = rest;
-      let newLightState = {...lightAtId, turnedOn, color};
+      let newLightState = {...lightAtId, turnedOn};
       ReasonReact.Update(
         Belt.List.concat(beforeLight, [newLightState, ...rest]),
       );
     | _ => ReasonReact.NoUpdate
     },
+  didMount: ({send}) =>
+    IpcRenderer.on((. _event, message) =>
+      switch (message) {
+      | `SetLightStatuses(statuses) =>
+        Belt.List.forEach(statuses, ((lightId, turnedOn)) =>
+          send(ToggleLight(lightId, turnedOn))
+        )
+      | _ => Js.log("Hello")
+      }
+    ),
   render: ({state, send}) =>
     <div className=root>
       {
         Belt.List.map(state, light =>
           <div
             className={lightTile(light.turnedOn, light.color)}
-            onClick={
-              _ => send(ToggleLight(light.id, !light.turnedOn, light.color))
-            }>
+            onClick={_ => send(ToggleLight(light.id, !light.turnedOn))}>
             {ReasonReact.string(light.name)}
           </div>
         )
