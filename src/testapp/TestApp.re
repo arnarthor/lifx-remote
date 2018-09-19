@@ -113,7 +113,6 @@ let make = _children => {
         Belt.List.splitAt(state, id)->Belt.Option.getExn;
       let [lightAtId, ...rest] = rest;
       let newLightState = {...lightAtId, turnedOn, color};
-      Js.log(newLightState);
       ReasonReact.Update(
         Belt.List.concat(beforeLight, [newLightState, ...rest]),
       );
