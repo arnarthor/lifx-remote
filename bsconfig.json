@@ -14,10 +14,12 @@
   },
   "suffix": ".bs.js",
   "bs-dependencies": [
+    "bs-css",
     "bs-electron",
     "bs-electron-positioner",
     "bs-node-lifx-lan",
-    "reason-react"
+    "reason-react",
+    "reductive"
   ],
   "warnings": {
     "error": "+101"

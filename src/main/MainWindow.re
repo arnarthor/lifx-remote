@@ -7,12 +7,15 @@ module IpcMain = IpcMain.MakeIpcMain(Messages);
 let mainWindow = ref(Js.null);
 let tray = ref(Js.null);
 
+/* TODO: Add runtime config */
+let dev = true;
+
 let createWindow = () => {
   mainWindow :=
     Js.Null.return(
       BrowserWindow.makeWindowConfig(
-        ~width=800,
-        ~height=525,
+        ~width=if (dev) {1400} else {800},
+        ~height=if (dev) {800} else {525},
         ~frame=false,
         ~fullscreenable=false,
         ~resizeable=false,
@@ -30,10 +33,12 @@ let createWindow = () => {
   BrowserWindow.loadURL(
     Js.Null.getExn(mainWindow^),
     /* TODO: Setup env checks */
-    true ? "http://localhost:1234" : {j|file://$bundleLocation|j},
+    dev ? "http://localhost:1234" : {j|file://$bundleLocation|j},
   );
 
-  /* BrowserWindow.openDevTools(Js.Null.getExn(mainWindow^)); */
+  if (dev) {
+    BrowserWindow.openDevTools(Js.Null.getExn(mainWindow^));
+  };
 
   BrowserWindow.on(Js.Null.getExn(mainWindow^), `Blur, _ =>
     BrowserWindow.hide(Js.Null.getExn(mainWindow^))
@@ -89,9 +94,10 @@ App.on(
   () => {
     IpcMain.on((. _event, message) =>
       switch (message) {
-      | `TurnOnAllLights => Js.log("Turn on all lights")
-      | `TurnOffAllLights => Js.log("Turn off all lights")
+      | `TurnOnAllLights => Lifx.turnOnAll()
+      | `TurnOffAllLights => Lifx.turnOffAll()
       | `SetLightStatuses(lightStatuses) => Js.log("All lights")
+      | `RefreshLightsList => Js.log("Discover")
       }
     );
     createTray();

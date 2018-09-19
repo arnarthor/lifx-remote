@@ -6,7 +6,8 @@
     "build": "bsb -clean-world -make-world",
     "watch": "bsb -clean-world -make-world -w",
     "clean": "bsb -clean-world",
-    "start": "parcel src/web/index.html",
+    "start": "concurrently 'yarn start:parcel' 'yarn start:electron' 'cd ../bs-electron && yarn watch' 'cd ../bs-electron-position && yarn watch' 'cd ../../kristinn93/bs-node-lifx-lan && yarn watch'",
+    "start:parcel": "parcel src/web/index.html",
     "start:electron": "nodemon --exec 'electron src/main/MainWindow.bs.js' --watch src/main",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "yarn link bs-electron bs-electron-positioner bs-node-lifx-lan"
@@ -21,9 +22,13 @@
     "reason-react": ">=0.4.0"
   },
   "devDependencies": {
+    "bs-css": "^7.2.0",
     "bs-platform": "^4.0.5",
+    "bs-typed-glamor": "glennsl/bs-typed-glamor",
     "bsb-js": "^1.1.7",
+    "concurrently": "^4.0.1",
     "electron-positioner": "^4.1.0",
-    "nodemon": "^1.18.4"
+    "nodemon": "^1.18.4",
+    "reductive": "^1.0.0"
   }
 }

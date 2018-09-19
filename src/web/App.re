@@ -1,3 +1,5 @@
+open Css;
+
 let component = ReasonReact.statelessComponent("App");
 
 module IpcRenderer = BsElectron.IpcRenderer.MakeIpcRenderer(Messages);
@@ -8,11 +10,12 @@ IpcRenderer.on((. _event, message) =>
   }
 );
 
-let make = (~message, _children) => {
+let root = style([minHeight(`vh(100.)), backgroundColor(hex("000000"))]);
+
+let make = _children => {
   ...component,
   render: _self =>
-    <div>
-      <header> <h1> {ReasonReact.string(message)} </h1> </header>
+    <div className=root>
       <button onClick={_ => IpcRenderer.send(`TurnOnAllLights)}>
         {ReasonReact.string("Turn on all lights")}
       </button>
@@ -22,12 +25,5 @@ let make = (~message, _children) => {
       <button onClick={_ => IpcRenderer.send(`SetLightStatuses([]))}>
         {ReasonReact.string("Turn off lights")}
       </button>
-      <p>
-        {
-          ReasonReact.string(
-            "To get started, edit src/App.re and save to reload.",
-          )
-        }
-      </p>
     </div>,
 };

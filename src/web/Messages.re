@@ -4,4 +4,5 @@ type rendererToMainMessages = [
   | `TurnOnAllLights
   | `TurnOffAllLights
   | `SetLightStatuses(list((string, bool)))
+  | `RefreshLightsList
 ];
