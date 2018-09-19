@@ -1,5 +1,7 @@
 open BsElectron;
 
+module TestAppBrowserWindow =
+  BrowserWindow.MakeBrowserWindow(TestAppMessages);
 module BrowserWindow = BrowserWindow.MakeBrowserWindow(Messages);
 
 module IpcMain = IpcMain.MakeIpcMain(Messages);
@@ -14,12 +16,8 @@ let dev = true;
 let createTestApp = () => {
   testAppWindow :=
     Js.Null.return(
-      BrowserWindow.makeWindowConfig(
-        ~width=if (dev) {1400} else {800},
-        ~height=if (dev) {800} else {525},
-        (),
-      )
-      ->BrowserWindow.make,
+      TestAppBrowserWindow.makeWindowConfig(~width=559, ~height=2000, ())
+      ->TestAppBrowserWindow.make,
     );
 
   let bundleLocation =
@@ -28,14 +26,24 @@ let createTestApp = () => {
       "./build/index.html",
     |]);
 
-  BrowserWindow.loadURL(
+  TestAppBrowserWindow.loadURL(
     Js.Null.getExn(testAppWindow^),
     /* TODO: Setup env checks */
     dev ? "http://localhost:1235" : {j|file://$bundleLocation|j},
   );
+  let {x, y}: ElectronPositioner.coordinates =
+    Js.Null.getExn(testAppWindow^)
+    ->ElectronPositioner.make
+    ->ElectronPositioner.calculate(`TopLeft);
 
+  TestAppBrowserWindow.setPosition(
+    Js.Null.getExn(testAppWindow^),
+    ~x,
+    ~y,
+    ~animate=false,
+  );
   if (dev) {
-    BrowserWindow.openDevTools(Js.Null.getExn(testAppWindow^));
+    TestAppBrowserWindow.openDevTools(Js.Null.getExn(testAppWindow^));
   };
 };
 
@@ -125,7 +133,8 @@ App.on(
       switch (message) {
       | `TurnOnAllLights => Lifx.turnOnAll()
       | `TurnOffAllLights => Lifx.turnOffAll()
-      | `SetLightStatuses(lightStatuses) => Js.log("All lights")
+      | `SetLightStatuses(_) as signal =>
+        TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal)
       | `RefreshLightsList => Js.log("Discover")
       }
     );

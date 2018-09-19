@@ -79,11 +79,9 @@ let make = _children => {
         {allLightsOn: on},
         (
           self =>
-            if (self.state.allLightsOn) {
-              IpcRenderer.send(`TurnOnAllLights);
-            } else {
-              IpcRenderer.send(`TurnOffAllLights);
-            }
+            IpcRenderer.send(
+              `SetLightStatuses([(0, self.state.allLightsOn)]),
+            )
         ),
       )
     },

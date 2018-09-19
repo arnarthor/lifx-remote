@@ -115,9 +115,10 @@ let make = _children => {
     IpcRenderer.on((. _event, message) =>
       switch (message) {
       | `SetLightStatuses(statuses) =>
+        Js.log("Got light signal");
         Belt.List.forEach(statuses, ((lightId, turnedOn)) =>
           send(ToggleLight(lightId, turnedOn))
-        )
+        );
       | _ => Js.log("Hello")
       }
     ),
