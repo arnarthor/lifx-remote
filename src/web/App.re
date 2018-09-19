@@ -1,6 +1,12 @@
 open Css;
+%raw
+"require('./lightbulb.css')";
 
-let component = ReasonReact.statelessComponent("App");
+type state = {allLightsOn: bool};
+
+type action =
+  | AllLightsOn(bool);
+let component = ReasonReact.reducerComponent(__MODULE__);
 
 module IpcRenderer = BsElectron.IpcRenderer.MakeIpcRenderer(Messages);
 
@@ -10,20 +16,87 @@ IpcRenderer.on((. _event, message) =>
   }
 );
 
-let root = style([minHeight(`vh(100.)), backgroundColor(hex("000000"))]);
+let root =
+  style([
+    minHeight(`vh(100.)),
+    backgroundColor(hex("4f4f4f")),
+    fontSize(px(16)),
+    color(hex("ff")),
+    padding(px(20)),
+  ]);
+
+let lightContainer = (bulbOn: bool) => {
+  let outBoxShadow = boxShadow(~blur=px(17), ~spread=px(9));
+  let insetBoxShadow = boxShadow(~blur=px(15), ~spread=px(5), ~inset=true);
+  let off = [
+    rgba(0, 0, 0, 0.5)->outBoxShadow,
+    rgba(255, 255, 255, 0.2)->insetBoxShadow,
+  ];
+  let on = [
+    rgba(232, 212, 60, 0.75)->outBoxShadow,
+    rgba(232, 212, 60, 0.8)->insetBoxShadow,
+  ];
+  let shadow = bulbOn ? on : off;
+
+  let txtShadow = textShadow(~blur=px(3));
+  let on = rgba(232, 212, 60, 0.5)->txtShadow;
+  let off = rgba(0, 0, 0, 0.8)->txtShadow;
+  let txtShadow = bulbOn ? off : on;
+
+  style([
+    display(`flex),
+    padding(em(1.)),
+    flexDirection(`column),
+    justifyContent(`center),
+    width(px(150)),
+    height(px(150)),
+    borderRadius(pct(50.)),
+    boxShadows(shadow),
+    transition(~duration=1000, "all"),
+    selector(
+      ">label",
+      [
+        txtShadow,
+        color(hex("ffffff")),
+        marginLeft(`auto),
+        marginRight(`auto),
+        marginBottom(px(2)),
+        transition(~duration=1000, "all"),
+      ],
+    ),
+  ]);
+};
 
 let make = _children => {
   ...component,
-  render: _self =>
+  initialState: () => {allLightsOn: false},
+  reducer: (action, _state) =>
+    switch (action) {
+    | AllLightsOn(on) =>
+      ReasonReact.UpdateWithSideEffects(
+        {allLightsOn: on},
+        (
+          self =>
+            if (self.state.allLightsOn) {
+              IpcRenderer.send(`TurnOnAllLights);
+            } else {
+              IpcRenderer.send(`TurnOffAllLights);
+            }
+        ),
+      )
+    },
+  render: self =>
     <div className=root>
-      <button onClick={_ => IpcRenderer.send(`TurnOnAllLights)}>
-        {ReasonReact.string("Turn on all lights")}
-      </button>
-      <button onClick={_ => IpcRenderer.send(`TurnOffAllLights)}>
-        {ReasonReact.string("Turn off all lights")}
-      </button>
-      <button onClick={_ => IpcRenderer.send(`SetLightStatuses([]))}>
-        {ReasonReact.string("Turn off lights")}
-      </button>
+      <div className={lightContainer(self.state.allLightsOn)}>
+        <label> {ReasonReact.string("All lights")} </label>
+        <input
+          className="l"
+          type_="checkbox"
+          checked={self.state.allLightsOn}
+          onChange={
+            e => self.send(AllLightsOn(ReactEvent.Form.target(e)##checked))
+          }
+        />
+      </div>
     </div>,
 };
