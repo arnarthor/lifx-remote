@@ -1,4 +1,5 @@
 open Css;
+open! Styles;
 %raw
 "require('./lightbulb.css')";
 
@@ -6,6 +7,7 @@ type state = {allLightsOn: bool};
 
 type action =
   | AllLightsOn(bool);
+
 let component = ReasonReact.reducerComponent(__MODULE__);
 
 module IpcRenderer = BsElectron.IpcRenderer.MakeIpcRenderer(Messages);
@@ -19,7 +21,7 @@ IpcRenderer.on((. _event, message) =>
 let root =
   style([
     minHeight(`vh(100.)),
-    backgroundColor(hex("4f4f4f")),
+    backgroundColor(black),
     fontSize(px(16)),
     color(hex("ff")),
     padding(px(20)),

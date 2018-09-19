@@ -5,10 +5,39 @@ module BrowserWindow = BrowserWindow.MakeBrowserWindow(Messages);
 module IpcMain = IpcMain.MakeIpcMain(Messages);
 
 let mainWindow = ref(Js.null);
+let testAppWindow = ref(Js.null);
 let tray = ref(Js.null);
 
 /* TODO: Add runtime config */
 let dev = true;
+
+let createTestApp = () => {
+  testAppWindow :=
+    Js.Null.return(
+      BrowserWindow.makeWindowConfig(
+        ~width=if (dev) {1400} else {800},
+        ~height=if (dev) {800} else {525},
+        (),
+      )
+      ->BrowserWindow.make,
+    );
+
+  let bundleLocation =
+    Node_path.join([|
+      Belt.Option.getExn([%bs.node __dirname]),
+      "./build/index.html",
+    |]);
+
+  BrowserWindow.loadURL(
+    Js.Null.getExn(testAppWindow^),
+    /* TODO: Setup env checks */
+    dev ? "http://localhost:1235" : {j|file://$bundleLocation|j},
+  );
+
+  if (dev) {
+    BrowserWindow.openDevTools(Js.Null.getExn(testAppWindow^));
+  };
+};
 
 let createWindow = () => {
   mainWindow :=
@@ -101,6 +130,7 @@ App.on(
       }
     );
     createTray();
+    createTestApp();
   },
 );
 App.Dock.hide();
