@@ -51,8 +51,8 @@ let createWindow = () => {
   mainWindow :=
     Js.Null.return(
       BrowserWindow.makeWindowConfig(
-        ~width=if (dev) {1400} else {800},
-        ~height=if (dev) {800} else {525},
+        ~width=800,
+        ~height=if (dev) {1600} else {525},
         ~frame=false,
         ~fullscreenable=false,
         ~resizeable=false,

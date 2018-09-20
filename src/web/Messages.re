@@ -1,4 +1,4 @@
-type mainToRendererMessages = [ | `LightStatus(list((string, bool)))];
+type mainToRendererMessages = [ | `LightStatus(list(Types.light))];
 
 type rendererToMainMessages = [
   | `TurnOnAllLights

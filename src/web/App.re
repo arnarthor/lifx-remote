@@ -3,9 +3,13 @@ open! Styles;
 %raw
 "require('./lightbulb.css')";
 
-type state = {allLightsOn: bool};
+type state = {
+  allLightsOn: bool,
+  lights: list(Types.light),
+};
 
 type action =
+  | Discover(list(Types.light))
   | AllLightsOn(bool);
 
 let component = ReasonReact.reducerComponent(__MODULE__);
@@ -71,12 +75,12 @@ let lightContainer = (bulbOn: bool) => {
 
 let make = _children => {
   ...component,
-  initialState: () => {allLightsOn: false},
-  reducer: (action, _state) =>
+  initialState: () => {allLightsOn: false, lights: []},
+  reducer: (action, state) =>
     switch (action) {
     | AllLightsOn(on) =>
       ReasonReact.UpdateWithSideEffects(
-        {allLightsOn: on},
+        {...state, allLightsOn: on},
         (
           self =>
             IpcRenderer.send(
@@ -84,7 +88,16 @@ let make = _children => {
             )
         ),
       )
+    | Discover(lights) => ReasonReact.Update({...state, lights})
     },
+  didMount: ({send}) => {
+    IpcRenderer.on((. _event, message) =>
+      switch (message) {
+      | `LightStatus(lights) => Js.log(lights)
+      }
+    );
+    IpcRenderer.send(`RefreshLightsList);
+  },
   render: self =>
     <div className=root>
       <div className={lightContainer(self.state.allLightsOn)}>
