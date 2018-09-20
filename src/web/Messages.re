@@ -1,3 +1,4 @@
+let message = __MODULE__;
 type mainToRendererMessages = [ | `LightStatus(list(Types.light))];
 
 type rendererToMainMessages = [

@@ -1,5 +1,5 @@
 open Css;
-open Types;
+open! Types;
 open! Styles;
 
 let lights = [
@@ -102,14 +102,14 @@ let make = _children => {
       );
     | _ => ReasonReact.NoUpdate
     },
-  didMount: ({send}) =>
+  didMount: ({send, state}) =>
     IpcRenderer.on((. _event, message) =>
       switch (message) {
       | `SetLightStatuses(statuses) =>
-        Js.log("Got light signal");
         Belt.List.forEach(statuses, ((lightId, turnedOn)) =>
           send(ToggleLight(lightId, turnedOn))
-        );
+        )
+      | `RefreshLightsList => IpcRenderer.send(`LightStatus(state))
       | _ => Js.log("Hello")
       }
     ),

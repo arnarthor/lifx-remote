@@ -4,6 +4,7 @@ module TestAppBrowserWindow =
   BrowserWindow.MakeBrowserWindow(TestAppMessages);
 module BrowserWindow = BrowserWindow.MakeBrowserWindow(Messages);
 
+module TestAppIpc = IpcMain.MakeIpcMain(TestAppMessages);
 module IpcMain = IpcMain.MakeIpcMain(Messages);
 
 let mainWindow = ref(Js.null);
@@ -131,11 +132,56 @@ App.on(
   () => {
     IpcMain.on((. _event, message) =>
       switch (message) {
-      | `TurnOnAllLights => Lifx.turnOnAll()
-      | `TurnOffAllLights => Lifx.turnOffAll()
+      | `TurnOnAllLights =>
+        if (dev) {
+          ();
+        } else {
+          Lifx.turnOnAll();
+        }
+      | `TurnOffAllLights =>
+        if (dev) {
+          ();
+        } else {
+          Lifx.turnOffAll();
+        }
       | `SetLightStatuses(_) as signal =>
-        TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal)
-      | `RefreshLightsList => Js.log("Discover")
+        if (dev) {
+          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
+        }
+      | `RefreshLightsList as signal =>
+        if (dev) {
+          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
+        }
+      }
+    );
+    TestAppIpc.on((. _, message) =>
+      switch (message) {
+      | `LightStatus(_) as signal =>
+        BrowserWindow.send(Js.Null.getExn(mainWindow^), signal)
+      }
+    );
+    IpcMain.on((. _, message) =>
+      switch (message) {
+      | `TurnOnAllLights =>
+        if (dev) {
+          ();
+        } else {
+          Lifx.turnOnAll();
+        }
+      | `TurnOffAllLights =>
+        if (dev) {
+          ();
+        } else {
+          Lifx.turnOffAll();
+        }
+      | `SetLightStatuses(_) as signal =>
+        if (dev) {
+          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
+        }
+      | `RefreshLightsList as signal =>
+        if (dev) {
+          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
+        }
       }
     );
     createTray();

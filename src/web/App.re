@@ -3,24 +3,15 @@ open! Styles;
 %raw
 "require('./lightbulb.css')";
 
-type state = {
-  allLightsOn: bool,
-  lights: list(Types.light),
-};
+type state = {lights: list(Types.light)};
 
 type action =
   | Discover(list(Types.light))
-  | AllLightsOn(bool);
+  | ToggleLight(int, bool);
 
 let component = ReasonReact.reducerComponent(__MODULE__);
 
 module IpcRenderer = BsElectron.IpcRenderer.MakeIpcRenderer(Messages);
-
-IpcRenderer.on((. _event, message) =>
-  switch (message) {
-  | `LightStatus(statuses) => Js.log(statuses)
-  }
-);
 
 let root =
   style([
@@ -75,41 +66,52 @@ let lightContainer = (bulbOn: bool) => {
 
 let make = _children => {
   ...component,
-  initialState: () => {allLightsOn: false, lights: []},
+  initialState: () => {lights: []},
   reducer: (action, state) =>
     switch (action) {
-    | AllLightsOn(on) =>
+    | ToggleLight(id, turnedOn) =>
+      let (beforeLight, rest) =
+        Belt.List.splitAt(state.lights, id)->Belt.Option.getExn;
+      let [lightAtId, ...rest] = rest;
+      let newLightState = {...lightAtId, turnedOn};
       ReasonReact.UpdateWithSideEffects(
-        {...state, allLightsOn: on},
-        (
-          self =>
-            IpcRenderer.send(
-              `SetLightStatuses([(0, self.state.allLightsOn)]),
-            )
-        ),
-      )
-    | Discover(lights) => ReasonReact.Update({...state, lights})
+        {lights: Belt.List.concat(beforeLight, [newLightState, ...rest])},
+        (_ => IpcRenderer.send(`SetLightStatuses([(id, turnedOn)]))),
+      );
+    | Discover(lights) => ReasonReact.Update({lights: lights})
     },
   didMount: ({send}) => {
     IpcRenderer.on((. _event, message) =>
       switch (message) {
-      | `LightStatus(lights) => Js.log(lights)
+      | `LightStatus(lights) =>
+        Js.log2("Changing lights", lights);
+        send(Discover(lights));
       }
     );
     IpcRenderer.send(`RefreshLightsList);
   },
-  render: self =>
+  render: ({state, send}) =>
     <div className=root>
-      <div className={lightContainer(self.state.allLightsOn)}>
-        <label> {ReasonReact.string("All lights")} </label>
-        <input
-          className="l"
-          type_="checkbox"
-          checked={self.state.allLightsOn}
-          onChange={
-            e => self.send(AllLightsOn(ReactEvent.Form.target(e)##checked))
-          }
-        />
-      </div>
+      {
+        Belt.List.map(
+          state.lights,
+          light => {
+            Js.log(light);
+            <div
+              key=light.id->string_of_int
+              className={lightContainer(light.turnedOn)}>
+              <label> {ReasonReact.string(light.name)} </label>
+              <input
+                className="l"
+                type_="checkbox"
+                checked={light.turnedOn}
+                onChange={_ => send(ToggleLight(light.id, !light.turnedOn))}
+              />
+            </div>;
+          },
+        )
+        |> Belt.List.toArray
+        |> ReasonReact.array
+      }
     </div>,
 };
