@@ -15,11 +15,22 @@ module IpcRenderer = BsElectron.IpcRenderer.MakeIpcRenderer(Messages);
 
 let root =
   style([
-    minHeight(`vh(100.)),
+    minHeight(px(525)),
+    maxHeight(px(525)),
     backgroundColor(black),
     fontSize(px(16)),
     color(hex("ff")),
     padding(px(20)),
+    overflowY(`scroll),
+  ]);
+
+let lightsContainer =
+  style([
+    height(pct(100.)),
+    width(pct(100.)),
+    display(`grid),
+    gridTemplateColumns([pct(33.), pct(33.), pct(33.)]),
+    marginTop(px(-50)),
   ]);
 
 let lightContainer = (bulbOn: bool) => {
@@ -45,16 +56,21 @@ let lightContainer = (bulbOn: bool) => {
     padding(em(1.)),
     flexDirection(`column),
     justifyContent(`center),
+    marginLeft(`auto),
+    marginRight(`auto),
+    marginTop(px(50)),
     width(px(150)),
     height(px(150)),
     borderRadius(pct(50.)),
     boxShadows(shadow),
     transition(~duration=1000, "all"),
+    width(pct(50.)),
     selector(
       ">label",
       [
         txtShadow,
         color(hex("ffffff")),
+        userSelect(`none),
         marginLeft(`auto),
         marginRight(`auto),
         marginBottom(px(2)),
@@ -90,22 +106,24 @@ let make = _children => {
   },
   render: ({state, send}) =>
     <div className=root>
-      {
-        Belt.List.map(state.lights, light =>
-          <div
-            key=light.id->string_of_int
-            className={lightContainer(light.turnedOn)}>
-            <label> {ReasonReact.string(light.name)} </label>
-            <input
-              className="l"
-              type_="checkbox"
-              checked={light.turnedOn}
-              onChange={_ => send(ToggleLight(light.id, !light.turnedOn))}
-            />
-          </div>
-        )
-        |> Belt.List.toArray
-        |> ReasonReact.array
-      }
+      <div className=lightsContainer>
+        {
+          Belt.List.map(state.lights, light =>
+            <div
+              key=light.id->string_of_int
+              className={lightContainer(light.turnedOn)}>
+              <label> {ReasonReact.string(light.name)} </label>
+              <input
+                className="l"
+                type_="checkbox"
+                checked={light.turnedOn}
+                onChange={_ => send(ToggleLight(light.id, !light.turnedOn))}
+              />
+            </div>
+          )
+          |> Belt.List.toArray
+          |> ReasonReact.array
+        }
+      </div>
     </div>,
 };
