@@ -2,10 +2,10 @@ open BsElectron;
 
 module TestAppBrowserWindow =
   BrowserWindow.MakeBrowserWindow(TestAppMessages);
-module BrowserWindow = BrowserWindow.MakeBrowserWindow(Messages);
+module BrowserWindow = ElectronBrowserWindow;
 
 module TestAppIpc = IpcMain.MakeIpcMain(TestAppMessages);
-module IpcMain = IpcMain.MakeIpcMain(Messages);
+module IpcMain = ElectronIpcMain;
 
 let mainWindow = ref(Js.null);
 let testAppWindow = ref(Js.null);
@@ -127,63 +127,42 @@ let createTray = () => {
   );
 };
 
+let listenOnTestApp = () =>
+  TestAppIpc.on((. _, message) =>
+    switch (message) {
+    | `LightStatus(lights) =>
+      BrowserWindow.send(
+        Js.Null.getExn(mainWindow^),
+        "lightStatus",
+        Belt.List.map(lights, (light: Types.light) =>
+          {
+            "id": light.id,
+            "name": light.name,
+            "supportsColor": light.supportsColor,
+            "turnedOn": light.turnedOn,
+          }
+        )
+        ->Belt.List.toArray,
+      )
+    }
+  );
+
 App.on(
   `Ready,
   () => {
-    IpcMain.on((. _event, message) =>
-      switch (message) {
-      | `TurnOnAllLights =>
-        if (dev) {
-          ();
-        } else {
-          Lifx.turnOnAll();
-        }
-      | `TurnOffAllLights =>
-        if (dev) {
-          ();
-        } else {
-          Lifx.turnOffAll();
-        }
-      | `SetLightStatuses(_) as signal =>
-        if (dev) {
-          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
-        }
-      | `RefreshLightsList as signal =>
-        if (dev) {
-          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
-        }
-      }
+    IpcMain.on("refreshLightsList", (. _, _) =>
+      TestAppBrowserWindow.send(
+        Js.Null.getExn(testAppWindow^),
+        `RefreshLightsList,
+      )
     );
-    TestAppIpc.on((. _, message) =>
-      switch (message) {
-      | `LightStatus(_) as signal =>
-        BrowserWindow.send(Js.Null.getExn(mainWindow^), signal)
-      }
+    IpcMain.on("setLightStatus", (. _, message) =>
+      TestAppBrowserWindow.send(
+        Js.Null.getExn(testAppWindow^),
+        `SetLightStatuses([(message##id, message##turnedOn)]),
+      )
     );
-    IpcMain.on((. _, message) =>
-      switch (message) {
-      | `TurnOnAllLights =>
-        if (dev) {
-          ();
-        } else {
-          Lifx.turnOnAll();
-        }
-      | `TurnOffAllLights =>
-        if (dev) {
-          ();
-        } else {
-          Lifx.turnOffAll();
-        }
-      | `SetLightStatuses(_) as signal =>
-        if (dev) {
-          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
-        }
-      | `RefreshLightsList as signal =>
-        if (dev) {
-          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
-        }
-      }
-    );
+    listenOnTestApp();
     createTray();
     createTestApp();
   },

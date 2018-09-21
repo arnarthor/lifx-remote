@@ -1,17 +1,26 @@
 open Css;
 open! Styles;
+
 %raw
 "require('./lightbulb.css')";
 
-type state = {lights: list(Types.light)};
+[@bs.deriving jsConverter]
+type light = {
+  id: int,
+  name: string,
+  supportsColor: bool,
+  turnedOn: bool,
+};
+
+type state = {lights: list(light)};
 
 type action =
-  | Discover(list(Types.light))
+  | Discover(list(light))
   | ToggleLight(int, bool);
 
 let component = ReasonReact.reducerComponent(__MODULE__);
 
-module IpcRenderer = BsElectron.IpcRenderer.MakeIpcRenderer(Messages);
+module IpcRenderer = ElectronIpcRenderer;
 
 let root =
   style([
@@ -76,19 +85,42 @@ let make = _children => {
       let newLightState = {...lightAtId, turnedOn};
       ReasonReact.UpdateWithSideEffects(
         {lights: Belt.List.concat(beforeLight, [newLightState, ...rest])},
-        (_ => IpcRenderer.send(`SetLightStatuses([(id, turnedOn)]))),
+        (
+          _ =>
+            IpcRenderer.send(
+              BsElectron.Window.electron,
+              "setLightStatus",
+              {"id": id, "turnedOn": turnedOn},
+            )
+        ),
       );
     | Discover(lights) => ReasonReact.Update({lights: lights})
     },
   didMount: ({send}) => {
+<<<<<<< Updated upstream
     IpcRenderer.on((. _event, message) =>
       switch (message) {
       | `LightStatus(lights) =>
         Js.log2("Changing lights", lights);
         send(Discover(lights));
       }
+=======
+    IpcRenderer.on(
+      BsElectron.Window.electron,
+      "lightStatus",
+      (. _event, lights) => {
+        Js.log(lights);
+        send(
+          Discover(Belt.Array.map(lights, lightFromJs)->Belt.List.fromArray),
+        );
+      },
     );
-    IpcRenderer.send(`RefreshLightsList);
+    IpcRenderer.send(
+      BsElectron.Window.electron,
+      "refreshLightsList",
+      Js.Obj.empty(),
+>>>>>>> Stashed changes
+    );
   },
   render: ({state, send}) =>
     <div className=root>
