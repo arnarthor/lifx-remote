@@ -113,12 +113,6 @@ let make = _children => {
     | Discover(lights) => ReasonReact.Update({lights: lights})
     },
   didMount: ({send}) => {
-<<<<<<< Updated upstream
-    IpcRenderer.on((. _event, message) =>
-      switch (message) {
-      | `LightStatus(lights) => send(Discover(lights))
-      }
-=======
     IpcRenderer.on(
       BsElectron.Window.electron,
       "lightStatus",
@@ -133,7 +127,6 @@ let make = _children => {
       BsElectron.Window.electron,
       "refreshLightsList",
       Js.Obj.empty(),
->>>>>>> Stashed changes
     );
   },
   render: ({state, send}) =>
