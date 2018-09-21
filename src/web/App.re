@@ -83,9 +83,7 @@ let make = _children => {
   didMount: ({send}) => {
     IpcRenderer.on((. _event, message) =>
       switch (message) {
-      | `LightStatus(lights) =>
-        Js.log2("Changing lights", lights);
-        send(Discover(lights));
+      | `LightStatus(lights) => send(Discover(lights))
       }
     );
     IpcRenderer.send(`RefreshLightsList);
@@ -93,22 +91,18 @@ let make = _children => {
   render: ({state, send}) =>
     <div className=root>
       {
-        Belt.List.map(
-          state.lights,
-          light => {
-            Js.log(light);
-            <div
-              key=light.id->string_of_int
-              className={lightContainer(light.turnedOn)}>
-              <label> {ReasonReact.string(light.name)} </label>
-              <input
-                className="l"
-                type_="checkbox"
-                checked={light.turnedOn}
-                onChange={_ => send(ToggleLight(light.id, !light.turnedOn))}
-              />
-            </div>;
-          },
+        Belt.List.map(state.lights, light =>
+          <div
+            key=light.id->string_of_int
+            className={lightContainer(light.turnedOn)}>
+            <label> {ReasonReact.string(light.name)} </label>
+            <input
+              className="l"
+              type_="checkbox"
+              checked={light.turnedOn}
+              onChange={_ => send(ToggleLight(light.id, !light.turnedOn))}
+            />
+          </div>
         )
         |> Belt.List.toArray
         |> ReasonReact.array
