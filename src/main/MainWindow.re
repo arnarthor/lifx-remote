@@ -133,7 +133,7 @@ let listenOnTestApp = () =>
     | `LightStatus(lights) =>
       BrowserWindow.send(
         Js.Null.getExn(mainWindow^),
-        "lightStatus",
+        `LightStatus,
         Belt.List.map(lights, (light: Types.light) =>
           {
             "id": light.id,
@@ -150,13 +150,13 @@ let listenOnTestApp = () =>
 App.on(
   `Ready,
   () => {
-    IpcMain.on("refreshLightsList", (. _, _) =>
+    IpcMain.on(`RefreshLightsList, (. _, _) =>
       TestAppBrowserWindow.send(
         Js.Null.getExn(testAppWindow^),
         `RefreshLightsList,
       )
     );
-    IpcMain.on("setLightStatus", (. _, message) =>
+    IpcMain.on(`SetLightStatus, (. _, message) =>
       TestAppBrowserWindow.send(
         Js.Null.getExn(testAppWindow^),
         `SetLightStatuses([(message##id, message##turnedOn)]),

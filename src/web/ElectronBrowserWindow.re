@@ -40,6 +40,8 @@ external on:
 
 [@bs.send] [@bs.scope "webContents"]
 external send: (t, string, 'a) => unit = "send";
+let send = (t, message, data) =>
+  send(t, ElectronTypes.mainToRendererToJs(message), data);
 
 [@bs.send] external openDevTools: t => unit = "";
 

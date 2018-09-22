@@ -105,7 +105,7 @@ let make = _children => {
           _ =>
             IpcRenderer.send(
               BsElectron.Window.electron,
-              "setLightStatus",
+              `SetLightStatus,
               {"id": id, "turnedOn": turnedOn},
             )
         ),
@@ -115,7 +115,7 @@ let make = _children => {
   didMount: ({send}) => {
     IpcRenderer.on(
       BsElectron.Window.electron,
-      "lightStatus",
+      `LightStatus,
       (. _event, lights) => {
         Js.log(lights);
         send(
@@ -125,7 +125,7 @@ let make = _children => {
     );
     IpcRenderer.send(
       BsElectron.Window.electron,
-      "refreshLightsList",
+      `RefreshLightsList,
       Js.Obj.empty(),
     );
   },
