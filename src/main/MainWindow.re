@@ -142,29 +142,20 @@ let setLightStatus = message =>
 let listenOnTestApp = () =>
   TestAppIpc.on((. _, message) =>
     switch (message) {
-    | `LightStatus(lights) =>
-      BrowserWindow.send(
-        Js.Null.getExn(mainWindow^),
-        `LightStatus,
-        Belt.List.map(lights, (light: Types.light) =>
-          {
-            "id": light.id,
-            "name": light.name,
-            "supportsColor": light.supportsColor,
-            "turnedOn": light.turnedOn,
-          }
-        )
-        ->Belt.List.toArray,
-      )
+    | `LightStatus(_) as signal =>
+      BrowserWindow.send(Js.Null.getExn(mainWindow^), signal)
     }
   );
 
-let listenForAppEvents = () => {
-  IpcMain.on(`RefreshLightsList, (. _event, _message) => getLightsList());
-  IpcMain.on(`SetLightStatus, (. _, messageData) =>
-    setLightStatus(messageData)
+let listenForAppEvents = () =>
+  IpcMain.on((_, message) =>
+    switch (message) {
+    | `SetLightStatuses(_) as signal =>
+      TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal)
+    | `RefreshLightsList as signal =>
+      TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal)
+    }
   );
-};
 
 App.on(
   `Ready,

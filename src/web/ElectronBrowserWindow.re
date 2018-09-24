@@ -40,8 +40,8 @@ external on:
 
 [@bs.send] [@bs.scope "webContents"]
 external send: (t, string, 'a) => unit = "send";
-let send = (t, message, data) =>
-  send(t, ElectronTypes.mainToRendererToJs(message), data);
+let send = (t, arg: ElectronTypes.mainToRenderer) =>
+  send(t, "message", arg->BsElectron.Json.toValidJson->Js.Json.stringify);
 
 [@bs.send] external openDevTools: t => unit = "";
 

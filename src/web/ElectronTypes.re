@@ -1,5 +1,6 @@
-[@bs.deriving jsConverter]
-type mainToRenderer = [ | `LightStatus];
+type mainToRenderer = [ | `LightStatus(list(Types.light))];
 
-[@bs.deriving jsConverter]
-type rendererToMain = [ | `SetLightStatus | `RefreshLightsList];
+type rendererToMain = [
+  | `SetLightStatuses(list((int, bool)))
+  | `RefreshLightsList
+];
