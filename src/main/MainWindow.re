@@ -133,10 +133,10 @@ let getLightsList = () =>
     `RefreshLightsList,
   );
 
-let setLightStatus = message =>
+let setLightStatus = (message: ElectronTypes.lightStatusUpdate) =>
   TestAppBrowserWindow.send(
     Js.Null.getExn(testAppWindow^),
-    `SetLightStatuses([(message##id, message##turnedOn)]),
+    `SetLightStatuses([(message.id, message.turnedOn)]),
   );
 
 let listenOnTestApp = () =>
@@ -150,10 +150,8 @@ let listenOnTestApp = () =>
 let listenForAppEvents = () =>
   IpcMain.on((_, message) =>
     switch (message) {
-    | `SetLightStatuses(_) as signal =>
-      TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal)
-    | `RefreshLightsList as signal =>
-      TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal)
+    | `SetLightStatus(messageData) => setLightStatus(messageData)
+    | `RefreshLightsList => getLightsList()
     }
   );
 

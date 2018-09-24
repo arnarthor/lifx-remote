@@ -1,6 +1,10 @@
+type lightStatusUpdate = {
+  id: int,
+  turnedOn: bool,
+};
 type mainToRenderer = [ | `LightStatus(list(Types.light))];
 
 type rendererToMain = [
-  | `SetLightStatuses(list((int, bool)))
+  | `SetLightStatus(lightStatusUpdate)
   | `RefreshLightsList
 ];

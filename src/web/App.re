@@ -1,3 +1,4 @@
+open ElectronTypes;
 open Css;
 open! Styles;
 
@@ -97,7 +98,7 @@ let make = _children => {
     | ToggleLight(id, turnedOn) =>
       ReasonReact.UpdateWithSideEffects(
         {lights: calculateLights(state, id, turnedOn)},
-        (_ => IpcRenderer.send(`SetLightStatuses([(id, turnedOn)]))),
+        (_ => IpcRenderer.send(`SetLightStatus({id, turnedOn}))),
       )
     | Discover(lights) => ReasonReact.Update({lights: lights})
     },
