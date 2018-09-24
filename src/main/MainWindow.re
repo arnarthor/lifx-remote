@@ -43,9 +43,9 @@ let createTestApp = () => {
     ~y,
     ~animate=false,
   );
-  if (dev) {
-    TestAppBrowserWindow.openDevTools(Js.Null.getExn(testAppWindow^));
-  };
+  /* if (dev) {
+       {TestAppBrowserWindow.openDevTools(Js.Null.getExn(testAppWindow^));};
+     }; */
 };
 
 let createWindow = () => {
@@ -53,7 +53,7 @@ let createWindow = () => {
     Js.Null.return(
       BrowserWindow.makeWindowConfig(
         ~width=800,
-        ~height=if (dev) {1600} else {525},
+        ~height=if (dev) {525} else {525},
         ~frame=false,
         ~fullscreenable=false,
         ~resizeable=false,
@@ -74,9 +74,9 @@ let createWindow = () => {
     dev ? "http://localhost:1234" : {j|file://$bundleLocation|j},
   );
 
-  if (dev) {
-    BrowserWindow.openDevTools(Js.Null.getExn(mainWindow^));
-  };
+  /* if (dev) {
+       BrowserWindow.openDevTools(Js.Null.getExn(mainWindow^));
+     }; */
 
   BrowserWindow.on(Js.Null.getExn(mainWindow^), `Blur, _ =>
     BrowserWindow.hide(Js.Null.getExn(mainWindow^))
@@ -127,6 +127,18 @@ let createTray = () => {
   );
 };
 
+let getLightsList = () =>
+  TestAppBrowserWindow.send(
+    Js.Null.getExn(testAppWindow^),
+    `RefreshLightsList,
+  );
+
+let setLightStatus = message =>
+  TestAppBrowserWindow.send(
+    Js.Null.getExn(testAppWindow^),
+    `SetLightStatuses([(message##id, message##turnedOn)]),
+  );
+
 let listenOnTestApp = () =>
   TestAppIpc.on((. _, message) =>
     switch (message) {
@@ -147,21 +159,17 @@ let listenOnTestApp = () =>
     }
   );
 
+let listenForAppEvents = () => {
+  IpcMain.on("refreshLightsList", (. _event, _message) => getLightsList());
+  IpcMain.on("setLightStatus", (. _event, messageData) =>
+    setLightStatus(messageData)
+  );
+};
+
 App.on(
   `Ready,
   () => {
-    IpcMain.on("refreshLightsList", (. _, _) =>
-      TestAppBrowserWindow.send(
-        Js.Null.getExn(testAppWindow^),
-        `RefreshLightsList,
-      )
-    );
-    IpcMain.on("setLightStatus", (. _, message) =>
-      TestAppBrowserWindow.send(
-        Js.Null.getExn(testAppWindow^),
-        `SetLightStatuses([(message##id, message##turnedOn)]),
-      )
-    );
+    listenForAppEvents();
     listenOnTestApp();
     createTray();
     createTestApp();
