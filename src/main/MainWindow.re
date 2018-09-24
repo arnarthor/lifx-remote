@@ -133,10 +133,10 @@ let getLightsList = () =>
     `RefreshLightsList,
   );
 
-let setLightStatus = message =>
+let setLightStatus = (id, turnedOn) =>
   TestAppBrowserWindow.send(
     Js.Null.getExn(testAppWindow^),
-    `SetLightStatuses([(message##id, message##turnedOn)]),
+    `SetLightStatuses([(id, turnedOn)]),
   );
 
 let listenOnTestApp = () =>
@@ -162,7 +162,7 @@ let listenOnTestApp = () =>
 let listenForAppEvents = () => {
   IpcMain.on("refreshLightsList", (. _event, _message) => getLightsList());
   IpcMain.on("setLightStatus", (. _event, messageData) =>
-    setLightStatus(messageData)
+    setLightStatus(messageData##id, messageData##turnedOn)
   );
 };
 
