@@ -2,10 +2,10 @@ open BsElectron;
 
 module TestAppBrowserWindow =
   BrowserWindow.MakeBrowserWindow(TestAppMessages);
-module BrowserWindow = BrowserWindow.MakeBrowserWindow(Messages);
+module BrowserWindow = ElectronBrowserWindow;
 
 module TestAppIpc = IpcMain.MakeIpcMain(TestAppMessages);
-module IpcMain = IpcMain.MakeIpcMain(Messages);
+module IpcMain = ElectronIpcMain;
 
 let mainWindow = ref(Js.null);
 let testAppWindow = ref(Js.null);
@@ -43,9 +43,9 @@ let createTestApp = () => {
     ~y,
     ~animate=false,
   );
-  if (dev) {
-    TestAppBrowserWindow.openDevTools(Js.Null.getExn(testAppWindow^));
-  };
+  /* if (dev) {
+       {TestAppBrowserWindow.openDevTools(Js.Null.getExn(testAppWindow^));};
+     }; */
 };
 
 let createWindow = () => {
@@ -53,7 +53,7 @@ let createWindow = () => {
     Js.Null.return(
       BrowserWindow.makeWindowConfig(
         ~width=800,
-        ~height=if (dev) {1600} else {525},
+        ~height=if (dev) {525} else {525},
         ~frame=false,
         ~fullscreenable=false,
         ~resizeable=false,
@@ -74,9 +74,9 @@ let createWindow = () => {
     dev ? "http://localhost:1234" : {j|file://$bundleLocation|j},
   );
 
-  if (dev) {
-    BrowserWindow.openDevTools(Js.Null.getExn(mainWindow^));
-  };
+  /* if (dev) {
+       BrowserWindow.openDevTools(Js.Null.getExn(mainWindow^));
+     }; */
 
   BrowserWindow.on(Js.Null.getExn(mainWindow^), `Blur, _ =>
     BrowserWindow.hide(Js.Null.getExn(mainWindow^))
@@ -127,63 +127,50 @@ let createTray = () => {
   );
 };
 
+let getLightsList = () =>
+  TestAppBrowserWindow.send(
+    Js.Null.getExn(testAppWindow^),
+    `RefreshLightsList,
+  );
+
+let setLightStatus = (id, turnedOn) =>
+  TestAppBrowserWindow.send(
+    Js.Null.getExn(testAppWindow^),
+    `SetLightStatuses([(id, turnedOn)]),
+  );
+
+let listenOnTestApp = () =>
+  TestAppIpc.on((. _, message) =>
+    switch (message) {
+    | `LightStatus(lights) =>
+      BrowserWindow.send(
+        Js.Null.getExn(mainWindow^),
+        "lightStatus",
+        Belt.List.map(lights, (light: Types.light) =>
+          {
+            "id": light.id,
+            "name": light.name,
+            "supportsColor": light.supportsColor,
+            "turnedOn": light.turnedOn,
+          }
+        )
+        ->Belt.List.toArray,
+      )
+    }
+  );
+
+let listenForAppEvents = () => {
+  IpcMain.on("refreshLightsList", (. _event, _message) => getLightsList());
+  IpcMain.on("setLightStatus", (. _event, messageData) =>
+    setLightStatus(messageData##id, messageData##turnedOn)
+  );
+};
+
 App.on(
   `Ready,
   () => {
-    IpcMain.on((. _event, message) =>
-      switch (message) {
-      | `TurnOnAllLights =>
-        if (dev) {
-          ();
-        } else {
-          Lifx.turnOnAll();
-        }
-      | `TurnOffAllLights =>
-        if (dev) {
-          ();
-        } else {
-          Lifx.turnOffAll();
-        }
-      | `SetLightStatuses(_) as signal =>
-        if (dev) {
-          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
-        }
-      | `RefreshLightsList as signal =>
-        if (dev) {
-          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
-        }
-      }
-    );
-    TestAppIpc.on((. _, message) =>
-      switch (message) {
-      | `LightStatus(_) as signal =>
-        BrowserWindow.send(Js.Null.getExn(mainWindow^), signal)
-      }
-    );
-    IpcMain.on((. _, message) =>
-      switch (message) {
-      | `TurnOnAllLights =>
-        if (dev) {
-          ();
-        } else {
-          Lifx.turnOnAll();
-        }
-      | `TurnOffAllLights =>
-        if (dev) {
-          ();
-        } else {
-          Lifx.turnOffAll();
-        }
-      | `SetLightStatuses(_) as signal =>
-        if (dev) {
-          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
-        }
-      | `RefreshLightsList as signal =>
-        if (dev) {
-          TestAppBrowserWindow.send(Js.Null.getExn(testAppWindow^), signal);
-        }
-      }
-    );
+    listenForAppEvents();
+    listenOnTestApp();
     createTray();
     createTestApp();
   },

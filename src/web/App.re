@@ -1,17 +1,26 @@
 open Css;
 open! Styles;
+
 %raw
 "require('./lightbulb.css')";
 
-type state = {lights: list(Types.light)};
+[@bs.deriving jsConverter]
+type light = {
+  id: int,
+  name: string,
+  supportsColor: bool,
+  turnedOn: bool,
+};
+
+type state = {lights: list(light)};
 
 type action =
-  | Discover(list(Types.light))
+  | Discover(list(light))
   | ToggleLight(int, bool);
 
 let component = ReasonReact.reducerComponent(__MODULE__);
 
-module IpcRenderer = BsElectron.IpcRenderer.MakeIpcRenderer(Messages);
+module IpcRenderer = ElectronIpcRenderer;
 
 let root =
   style([
@@ -80,50 +89,66 @@ let lightContainer = (bulbOn: bool) => {
   ]);
 };
 
+let calculateLights = (state, id, turnedOn) => {
+  let (beforeLight, rest) =
+    Belt.List.splitAt(state.lights, id)->Belt.Option.getExn;
+  let [lightAtId, ...rest] = rest;
+  let newLightState = {...lightAtId, turnedOn};
+  Belt.List.concat(beforeLight, [newLightState, ...rest]);
+};
+
 let make = _children => {
-  ...component,
-  initialState: () => {lights: []},
-  reducer: (action, state) =>
-    switch (action) {
-    | ToggleLight(id, turnedOn) =>
-      let (beforeLight, rest) =
-        Belt.List.splitAt(state.lights, id)->Belt.Option.getExn;
-      let [lightAtId, ...rest] = rest;
-      let newLightState = {...lightAtId, turnedOn};
-      ReasonReact.UpdateWithSideEffects(
-        {lights: Belt.List.concat(beforeLight, [newLightState, ...rest])},
-        (_ => IpcRenderer.send(`SetLightStatuses([(id, turnedOn)]))),
-      );
-    | Discover(lights) => ReasonReact.Update({lights: lights})
-    },
-  didMount: ({send}) => {
-    IpcRenderer.on((. _event, message) =>
-      switch (message) {
-      | `LightStatus(lights) => send(Discover(lights))
-      }
+  let setLightList = (send, lights) =>
+    send(
+      Discover(Belt.Array.map(lights, lightFromJs)->Belt.List.fromArray),
     );
-    IpcRenderer.send(`RefreshLightsList);
-  },
-  render: ({state, send}) =>
-    <div className=root>
-      <div className=lightsContainer>
-        {
-          Belt.List.map(state.lights, light =>
-            <div
-              key=light.id->string_of_int
-              className={lightContainer(light.turnedOn)}>
-              <label> {ReasonReact.string(light.name)} </label>
-              <input
-                className="l"
-                type_="checkbox"
-                checked={light.turnedOn}
-                onChange={_ => send(ToggleLight(light.id, !light.turnedOn))}
-              />
-            </div>
-          )
-          |> Belt.List.toArray
-          |> ReasonReact.array
-        }
-      </div>
-    </div>,
+  {
+    ...component,
+    initialState: () => {lights: []},
+    reducer: (action, state) =>
+      switch (action) {
+      | ToggleLight(id, turnedOn) =>
+        ReasonReact.UpdateWithSideEffects(
+          {lights: calculateLights(state, id, turnedOn)},
+          (
+            _ =>
+              IpcRenderer.send(
+                "setLightStatus",
+                {"id": id, "turnedOn": turnedOn},
+              )
+          ),
+        )
+      | Discover(lights) => ReasonReact.Update({lights: lights})
+      },
+    didMount: ({send}) => {
+      IpcRenderer.on("lightStatus", (. _event, lights) =>
+        setLightList(send, lights)
+      );
+      IpcRenderer.send("refreshLightsList", Js.Obj.empty());
+    },
+    render: ({state, send}) =>
+      <div className=root>
+        <div className=lightsContainer>
+          {
+            Belt.List.map(state.lights, light =>
+              <div
+                key=light.id->string_of_int
+                className={lightContainer(light.turnedOn)}>
+                <label> {ReasonReact.string(light.name)} </label>
+                <input
+                  className="l"
+                  type_="checkbox"
+                  checked={light.turnedOn}
+                  onChange={
+                    _ => send(ToggleLight(light.id, !light.turnedOn))
+                  }
+                />
+              </div>
+            )
+            |> Belt.List.toArray
+            |> ReasonReact.array
+          }
+        </div>
+      </div>,
+  };
 };

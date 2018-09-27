@@ -6,7 +6,7 @@
     "build": "bsb -clean-world -make-world",
     "watch": "bsb -clean-world -make-world -w",
     "clean": "bsb -clean-world",
-    "start": "concurrently 'yarn start:parcel' 'yarn start:parcel-test-app' 'yarn start:electron' 'cd ../bs-electron && yarn watch' 'cd ../bs-electron-positioner && yarn watch' 'cd ../../kristinn93/bs-node-lifx-lan && yarn watch'",
+    "start": "concurrently 'yarn start:parcel' 'yarn start:parcel-test-app' 'yarn start:electron'",
     "start:parcel": "parcel src/web/index.html",
     "start:parcel-test-app": "parcel src/testapp/testapp.html --port 1235",
     "start:electron": "nodemon --exec 'electron src/main/MainWindow.bs.js' --watch src/main",
